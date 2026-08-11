@@ -1,0 +1,294 @@
+// Suporte CA3 — Schema Prisma
+// Consulte docs/DATA_MODEL.md para o modelo de dados completo.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────── Enums ───────────────────────────
+
+enum Role {
+  ADMIN
+  SUPERVISOR
+  AGENT
+  CUSTOMER
+}
+
+enum ConversationChannel {
+  WEB
+  WHATSAPP
+  EMAIL
+}
+
+enum ConversationStatus {
+  AGUARDANDO_ATENDENTE
+  EM_ATENDIMENTO
+  RESOLVIDO
+  FECHADO
+}
+
+enum MessageSenderType {
+  CONTACT
+  AGENT
+  SYSTEM
+}
+
+enum MessageStatus {
+  ENVIADA
+  ENTREGUE
+  LIDA
+  FALHOU
+}
+
+enum TicketStatus {
+  ABERTO
+  EM_ATENDIMENTO
+  AGUARDANDO_CLIENTE
+  RESOLVIDO
+  FECHADO
+}
+
+enum TicketPriority {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+enum SlaBreachType {
+  PRIMEIRA_RESPOSTA
+  RESOLUCAO
+}
+
+enum NotificationType {
+  TICKET_ATRIBUIDO
+  NOVA_MENSAGEM
+  SLA_VIOLADO
+}
+
+enum WebhookSource {
+  WHATSAPP
+}
+
+// ─────────────────────────── Modelos ───────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(AGENT)
+  teamId       String?
+  isActive     Boolean  @default(true)
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  team               Team?            @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  supervisedTeams    Team[]           @relation("TeamSupervisor")
+  assignedConversations Conversation[] @relation("ConversationAssignee")
+  assignedTickets    Ticket[]         @relation("TicketAssignee")
+  messages           Message[]
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+
+  @@index([teamId])
+  @@index([role])
+}
+
+model Team {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+  supervisorId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  supervisor User?  @relation("TeamSupervisor", fields: [supervisorId], references: [id], onDelete: SetNull)
+  members    User[]
+  tickets    Ticket[]
+  conversations Conversation[]
+
+  @@index([supervisorId])
+}
+
+model Contact {
+  id         String  @id @default(uuid())
+  name       String
+  phone      String?
+  email      String?
+  whatsappId String?  @unique
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  conversations Conversation[]
+  tickets       Ticket[]
+
+  @@index([phone])
+  @@index([email])
+}
+
+model Conversation {
+  id            String              @id @default(uuid())
+  channel       ConversationChannel
+  status        ConversationStatus  @default(AGUARDANDO_ATENDENTE)
+  contactId     String
+  assigneeId    String?
+  teamId        String?
+  title         String?
+  startedAt     DateTime            @default(now())
+  lastMessageAt DateTime?
+  resolvedAt    DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  contact  Contact   @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  assignee User?     @relation("ConversationAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  team     Team?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  messages Message[]
+  tickets  Ticket[]
+
+  @@index([contactId])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             String            @id @default(uuid())
+  conversationId String
+  senderType     MessageSenderType
+  senderId       String?
+  body           String
+  mediaUrl       String?
+  status         MessageStatus     @default(ENVIADA)
+  deliveredAt    DateTime?
+  readAt         DateTime?
+  createdAt      DateTime          @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User?        @relation(fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+model Ticket {
+  id                String        @id @default(uuid())
+  number            Int           @default(autoincrement())
+  subject           String
+  description       String
+  status            TicketStatus  @default(ABERTO)
+  priority          TicketPriority @default(MEDIA)
+  category          String?
+  conversationId    String?
+  contactId         String?
+  assigneeId        String?
+  teamId            String?
+  slaPolicyId       String?
+  firstResponseDueAt DateTime?
+  resolutionDueAt   DateTime?
+  firstResponseAt   DateTime?
+  resolvedAt        DateTime?
+  openedAt          DateTime      @default(now())
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  contact      Contact?      @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  assignee     User?         @relation("TicketAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  team         Team?         @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  slaPolicy    SlaPolicy?    @relation(fields: [slaPolicyId], references: [id], onDelete: SetNull)
+  slaBreaches  SlaBreach[]
+  auditLogs    AuditLog[]
+
+  @@unique([number])
+  @@index([status])
+  @@index([priority])
+  @@index([assigneeId])
+  @@index([teamId])
+  @@index([openedAt])
+}
+
+model SlaPolicy {
+  id                   String   @id @default(uuid())
+  name                 String
+  category             String?
+  responseTimeMinutes  Int
+  resolutionTimeMinutes Int
+  businessHoursOnly    Boolean  @default(true)
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  tickets Ticket[]
+
+  @@index([category])
+}
+
+model SlaBreach {
+  id         String         @id @default(uuid())
+  ticketId   String
+  type       SlaBreachType
+  dueAt      DateTime
+  detectedAt DateTime      @default(now())
+  resolved   Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([type])
+}
+
+model WebhookEvent {
+  id             String        @id @default(uuid())
+  source         WebhookSource
+  payload        Json
+  signatureValid Boolean       @default(false)
+  processedAt    DateTime?
+  error          String?
+  receivedAt     DateTime      @default(now())
+
+  @@index([source])
+  @@index([processedAt])
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  recipientId String
+  type        NotificationType
+  title       String
+  body        String?
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
+
+  recipient User @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId])
+  @@index([readAt])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  ticketId   String?
+  action     String
+  entityType String
+  entityId   String
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ticket Ticket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([ticketId])
+  @@index([createdAt])
+}

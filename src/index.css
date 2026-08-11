@@ -1,0 +1,218 @@
+@import 'tailwindcss';
+@import './shared/styles/tokens.css';
+
+@theme {
+  --font-sans: var(--font-primary);
+  --font-secondary: var(--font-secondary);
+
+  --color-sidebar-bg: var(--color-sidebar-bg);
+  --color-sidebar-item-active-bg: var(--color-sidebar-item-active-bg);
+  --color-sidebar-item-active-text: var(--color-sidebar-item-active-text);
+  --color-sidebar-item-inactive: var(--color-sidebar-item-inactive);
+  --color-sidebar-logo-bg: var(--color-sidebar-logo-bg);
+  --color-content-bg: var(--color-content-bg);
+  --color-card-bg: var(--color-card-bg);
+  --color-card-border: var(--color-card-border);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-badge-urgent-bg: var(--color-badge-urgent-bg);
+  --color-badge-urgent-text: var(--color-badge-urgent-text);
+  --color-badge-high-bg: var(--color-badge-high-bg);
+  --color-badge-high-text: var(--color-badge-high-text);
+  --color-badge-medium-bg: var(--color-badge-medium-bg);
+  --color-badge-medium-text: var(--color-badge-medium-text);
+  --color-avatar-1: var(--color-avatar-1);
+  --color-avatar-2: var(--color-avatar-2);
+  --color-avatar-3: var(--color-avatar-3);
+  --color-avatar-logged: var(--color-avatar-logged);
+  --color-icon-bg: var(--color-icon-bg);
+  --color-border-light: var(--color-border-light);
+  --color-topbar-border: var(--color-topbar-border);
+  --color-bg-page: var(--color-bg-page);
+  --color-bg-surface: var(--color-bg-surface);
+  --color-bg-card: var(--color-bg-card);
+  --color-bg-modal: var(--color-bg-modal);
+  --color-bg-input: var(--color-bg-input);
+  --color-bg-subtle: var(--color-bg-subtle);
+  --color-progress-track: var(--color-progress-track);
+  --color-progress-fill: var(--color-progress-fill);
+
+  --color-primary-900: var(--color-primary-900);
+  --color-primary-800: var(--color-primary-800);
+  --color-primary-700: var(--color-primary-700);
+  --color-primary-600: var(--color-primary-600);
+  --color-primary-500: var(--color-primary-500);
+  --color-primary-400: var(--color-primary-400);
+  --color-primary-300: var(--color-primary-300);
+  --color-primary-200: var(--color-primary-200);
+  --color-primary-100: var(--color-primary-100);
+  --color-primary-50: var(--color-primary-50);
+
+  --color-gold-900: var(--color-gold-900);
+  --color-gold-800: var(--color-gold-800);
+  --color-gold-700: var(--color-gold-700);
+  --color-gold-600: var(--color-gold-600);
+  --color-gold-500: var(--color-gold-500);
+  --color-gold-400: var(--color-gold-400);
+  --color-gold-300: var(--color-gold-300);
+  --color-gold-200: var(--color-gold-200);
+  --color-gold-100: var(--color-gold-100);
+  --color-gold-50: var(--color-gold-50);
+
+  --color-success-900: var(--color-success-900);
+  --color-success-800: var(--color-success-800);
+  --color-success-700: var(--color-success-700);
+  --color-success-600: var(--color-success-600);
+  --color-success-500: var(--color-success-500);
+  --color-success-400: var(--color-success-400);
+  --color-success-300: var(--color-success-300);
+  --color-success-200: var(--color-success-200);
+  --color-success-100: var(--color-success-100);
+  --color-success-50: var(--color-success-50);
+
+  --color-warning-900: var(--color-warning-900);
+  --color-warning-800: var(--color-warning-800);
+  --color-warning-700: var(--color-warning-700);
+  --color-warning-600: var(--color-warning-600);
+  --color-warning-500: var(--color-warning-500);
+  --color-warning-400: var(--color-warning-400);
+  --color-warning-300: var(--color-warning-300);
+  --color-warning-200: var(--color-warning-200);
+  --color-warning-100: var(--color-warning-100);
+  --color-warning-50: var(--color-warning-50);
+
+  --color-danger-900: var(--color-danger-900);
+  --color-danger-800: var(--color-danger-800);
+  --color-danger-700: var(--color-danger-700);
+  --color-danger-600: var(--color-danger-600);
+  --color-danger-500: var(--color-danger-500);
+  --color-danger-400: var(--color-danger-400);
+  --color-danger-300: var(--color-danger-300);
+  --color-danger-200: var(--color-danger-200);
+  --color-danger-100: var(--color-danger-100);
+  --color-danger-50: var(--color-danger-50);
+
+  --color-info-900: var(--color-info-900);
+  --color-info-800: var(--color-info-800);
+  --color-info-700: var(--color-info-700);
+  --color-info-600: var(--color-info-600);
+  --color-info-500: var(--color-info-500);
+  --color-info-400: var(--color-info-400);
+  --color-info-300: var(--color-info-300);
+  --color-info-200: var(--color-info-200);
+  --color-info-100: var(--color-info-100);
+  --color-info-50: var(--color-info-50);
+
+  --color-gray-50: var(--gray-50);
+  --color-gray-100: var(--gray-100);
+  --color-gray-200: var(--gray-200);
+  --color-gray-300: var(--gray-300);
+  --color-gray-400: var(--gray-400);
+  --color-gray-500: var(--gray-500);
+  --color-gray-600: var(--gray-600);
+  --color-gray-700: var(--gray-700);
+  --color-gray-800: var(--gray-800);
+  --color-gray-900: var(--gray-900);
+
+  --color-ca3-navy-800: #1B2452;
+  --color-ca3-navy-900: #12162E;
+  --color-ca3-navy-border: #2A3159;
+  --color-ca3-amber-500: #f59e0b;
+  --color-ca3-amber-600: #d97706;
+  --color-ca3-text-light-primary: #F5F7FA;
+  --color-ca3-text-light-secondary: #B4B9CC;
+
+  /* v2 "Foco Claro" */
+  --color-brand: var(--color-brand);
+  --color-brand-hover: var(--color-brand-hover);
+  --color-brand-bright: var(--color-brand-bright);
+  --color-brand-ink: var(--color-brand-ink);
+  --color-focus-ring: var(--color-focus-ring);
+  --color-success: var(--color-success);
+  --color-success-bg: var(--color-success-bg);
+  --color-warning: var(--color-warning);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-danger: var(--color-danger);
+  --color-danger-bg: var(--color-danger-bg);
+  --color-info: var(--color-info);
+  --color-info-bg: var(--color-info-bg);
+  --color-neutral: var(--color-neutral);
+  --color-neutral-bg: var(--color-neutral-bg);
+  --font-mono: var(--font-mono);
+
+  --color-scale-primary-950: var(--scale-primary-950);
+  --color-scale-primary-900: var(--scale-primary-900);
+  --color-scale-primary-800: var(--scale-primary-800);
+  --color-scale-primary-700: var(--scale-primary-700);
+  --color-scale-primary-600: var(--scale-primary-600);
+  --color-scale-primary-500: var(--scale-primary-500);
+  --color-scale-primary-400: var(--scale-primary-400);
+  --color-scale-primary-300: var(--scale-primary-300);
+  --color-scale-primary-200: var(--scale-primary-200);
+  --color-scale-primary-100: var(--scale-primary-100);
+  --color-scale-primary-50: var(--scale-primary-50);
+
+  --color-scale-accent-600: var(--scale-accent-600);
+  --color-scale-accent-500: var(--scale-accent-500);
+  --color-scale-accent-400: var(--scale-accent-400);
+  --color-scale-accent-300: var(--scale-accent-300);
+  --color-scale-accent-200: var(--scale-accent-200);
+  --color-scale-accent-100: var(--scale-accent-100);
+  --color-scale-accent-50: var(--scale-accent-50);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-primary);
+  }
+}
+
+@layer utilities {
+  .animate-scale-up {
+    animation: scaleUp var(--duration-normal) var(--easing-default);
+  }
+
+  .text-size-h1 { font-size: var(--text-h1); line-height: var(--text-h1-height); }
+  .text-size-h4 { font-size: var(--text-h4); line-height: var(--text-h4-height); }
+  .text-size-h5 { font-size: var(--text-h5); line-height: var(--text-h5-height); }
+  .text-size-h6 { font-size: var(--text-h6); line-height: var(--text-h6-height); }
+  .text-size-body { font-size: var(--text-body); line-height: var(--text-body-height); }
+  .text-size-body-small { font-size: var(--text-body-small); line-height: var(--text-body-small-height); }
+  .text-size-caption { font-size: var(--text-caption); line-height: var(--text-caption-height); }
+  .text-number {
+    font-size: var(--text-number);
+    line-height: var(--text-number-height);
+    font-weight: 800;
+    letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+}
+
+/* v2 — focus ring global (azul-info, WCAG AA) */
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@keyframes scaleUp {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--gray-300);
+  border-radius: var(--radius-full);
+}

@@ -1,0 +1,33 @@
+# Dependências
+node_modules/
+dist/
+dist-ssr/
+
+# Ambiente
+.env
+.env.*
+!.env.example
+
+# Banco de dados local
+server/prisma/*.db
+server/prisma/*.db-journal
+server/uploads/
+
+# Dados locais de MCPs (sqlite, etc.)
+.mcp/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# IDE / SO
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Builds e artefatos
+*.tsbuildinfo
+coverage/
