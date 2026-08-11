@@ -4,32 +4,32 @@
 
 ---
 
-## Fase 0 — Fundação (em andamento)
+## Fase 0 — Fundação
 **Objetivo:** base documental e estrutura do projeto.
 
 - [x] Documentos de engenharia (PRD, ARCHITECTURE, DATA_MODEL, API, DESIGN_SYSTEM, DEPLOY)
 - [x] ADRs de decisões iniciais
 - [x] Estrutura monorepo (frontend raiz + server/)
-- [ ] Repositório GitHub configurado (`Duckwsn/Suporte-CA3`)
+- [x] Repositório GitHub configurado (`Duckwsn/Suporte-CA3`)
 
 ## Fase 1 — Núcleo (MVP)
 **Objetivo:** atendimento de ponta a ponta no canal Web.
 
-- [ ] Backend: auth JWT + middleware + health
-- [ ] Backend: usuários, equipes, contatos
-- [ ] Backend: conversas e mensagens (canal WEB)
-- [ ] Backend: tickets + SLA (políticas, engine, job)
-- [ ] Backend: notificações
-- [ ] Frontend: tokens, componentes shared, layout
-- [ ] Frontend: login, dashboard, atendimento, tickets, contatos, equipes
-- [ ] Seed de desenvolvimento
-- [ ] Validação e2e (Playwright) do fluxo cliente→atendente→ticket
+- [x] Backend: auth JWT + middleware + health
+- [x] Backend: usuários, equipes, contatos
+- [x] Backend: conversas e mensagens (canal WEB)
+- [x] Backend: tickets + SLA (políticas, engine, job)
+- [x] Backend: notificações
+- [x] Frontend: tokens, componentes shared, layout
+- [x] Frontend: login, dashboard, atendimento, tickets, contatos, equipes
+- [x] Seed de desenvolvimento
+- [ ] Validação e2e automatizada (Playwright) do fluxo cliente→atendente→ticket
 
 ## Fase 2 — Operação
-- [ ] Webhook WhatsApp (recepção + processamento)
-- [ ] Relatórios (KPIs, volume, export CSV)
-- [ ] Notificações em tempo real (polling refinado / WebSocket — ADR-0004)
-- [ ] Painel de administração (usuários, canais, config)
+- [x] Webhook WhatsApp (recepção + processamento) — validado E2E
+- [x] Relatórios (KPIs, volume, export CSV)
+- [x] Notificações em tempo real (polling refinado / WebSocket — ADR-0004; v1: polling)
+- [x] Painel de administração (usuários, canais, config)
 
 ## Fase 3 — Inteligência operacional
 - [ ] WebSocket para mensagens instantâneas

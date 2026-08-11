@@ -7,6 +7,11 @@ O log contínuo e detalhado fica em [docs/log.md](./docs/log.md).
 
 ## [Unreleased]
 
+### Adicionado (2026-08-11)
+- **Fase 1 — Núcleo (MVP)** concluída: login, dashboard, atendimento, tickets (+ Novo ticket), contatos, equipes e relatórios com export CSV.
+- **Fase 2 — Operação** parcial: webhook WhatsApp validado E2E (recepção + processamento; fix de token 403), notificações com polling em tempo real (5s, contador e "marcar todas como lidas"), painel de administração (editar papel, ativar/desativar e criar usuário).
+- Infraestrutura Docker (postgres:18 + redis) com volume corrigido; backend Express/Prisma com todos os endpoints validados; git + GitHub configurados.
+
 ### Adicionado (2026-08-06)
 - Início do projeto **Suporte CA3**: documentos de engenharia e planejamento.
 - Estrutura monorepo consistente com o Planner CA3 (frontend na raiz, backend em `server/`).
@@ -15,7 +20,7 @@ O log contínuo e detalhado fica em [docs/log.md](./docs/log.md).
 - Documentos criados: PRD, ARCHITECTURE, DATA_MODEL, API, DESIGN_SYSTEM, DEPLOY, ROADMAP, log.md.
 
 ### Pendente (próximas fases)
-- Schema Prisma completo e primeira migration.
-- Backend Express: autenticação JWT, módulos de atendimento, tickets, SLA, webhook WhatsApp.
-- Frontend: login, dashboard, painel de atendimento, tickets, contatos, equipes, relatórios.
-- Infraestrutura Docker (postgres, redis) e scripts de desenvolvimento.
+- Fase 2: canais no painel de administração (parcial) e notificações via WebSocket (ADR-0004).
+- Fase 3: WebSocket para mensagens, fila assíncrona (Redis), exportações avançadas e CSAT.
+- Fase 4: multi-tenant, i18n, PWA e integrações externas.
+- Testes automatizados e documentação de testes.
