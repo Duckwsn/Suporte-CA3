@@ -26,7 +26,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         <div className="fixed inset-0 z-overlay bg-black/40 lg:hidden" onClick={onClose} aria-hidden="true" />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-dropdown flex w-64 flex-col bg-sidebar-bg transition-transform lg:static lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-drawer flex w-64 flex-col bg-sidebar-bg transition-transform lg:static lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex h-16 items-center justify-between border-b border-white/10 px-5">
           <div className="flex items-center gap-2">
