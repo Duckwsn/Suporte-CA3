@@ -4,6 +4,7 @@ import { LoginPage } from '@/modules/login/LoginPage'
 import { RegisterPage } from '@/modules/register/RegisterPage'
 import { DashboardPage } from '@/modules/dashboard/DashboardPage'
 import { TicketsPage } from '@/modules/tickets/TicketsPage'
+import { NewTicketPage } from '@/modules/tickets/NewTicketPage'
 import { TicketDetailPage } from '@/modules/tickets/TicketDetailPage'
 import { ConversationsPage } from '@/modules/conversations/ConversationsPage'
 import { ContactsPage } from '@/modules/contacts/ContactsPage'
@@ -22,6 +23,7 @@ export function AppRoutes() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/atendimento" element={<ConversationsPage />} />
         <Route path="/tickets" element={<TicketsPage />} />
+        <Route path="/tickets/novo" element={<NewTicketPage />} />
         <Route path="/tickets/:id" element={<TicketDetailPage />} />
         <Route path="/contatos" element={<ContactsPage />} />
         <Route path="/relatorios" element={<ReportsPage />} />

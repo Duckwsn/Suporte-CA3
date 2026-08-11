@@ -30,17 +30,29 @@ export function ReportsPage() {
 
   const maxCount = Math.max(1, ...volume.map((v) => v.count))
 
+  async function handleExport() {
+    try {
+      const blob = await ReportService.exportCsv()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'tickets.csv'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setError('Erro ao exportar CSV')
+    }
+  }
+
   return (
     <div>
       <PageHeader
         title="Relatórios"
         subtitle="Indicadores de atendimento"
         actions={
-          <a href="/api/reports/export" target="_blank" rel="noreferrer">
-            <Button variant="secondary">
-              <Download className="size-4" /> Exportar CSV
-            </Button>
-          </a>
+          <Button variant="secondary" onClick={handleExport}>
+            <Download className="size-4" /> Exportar CSV
+          </Button>
         }
       />
 

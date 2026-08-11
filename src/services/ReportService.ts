@@ -21,5 +21,5 @@ export const ReportService = {
     return api.get<VolumePoint[]>(`/reports/volume${qs ? `?${qs}` : ''}`)
   },
 
-  exportCsv: () => api.get<Blob>('/reports/export'),
+  exportCsv: () => api.getBlob('/reports/export'),
 }

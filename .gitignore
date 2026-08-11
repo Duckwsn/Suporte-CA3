@@ -31,3 +31,9 @@ Thumbs.db
 # Builds e artefatos
 *.tsbuildinfo
 coverage/
+
+# Temporários de teste
+login.json
+tok.txt
+server.log
+web.log
