@@ -8,6 +8,7 @@ import { NewTicketPage } from '@/modules/tickets/NewTicketPage'
 import { TicketDetailPage } from '@/modules/tickets/TicketDetailPage'
 import { ConversationsPage } from '@/modules/conversations/ConversationsPage'
 import { ContactsPage } from '@/modules/contacts/ContactsPage'
+import { TeamsPage } from '@/modules/teams/TeamsPage'
 import { ReportsPage } from '@/modules/reports/ReportsPage'
 import { SettingsPage } from '@/modules/settings/SettingsPage'
 import { NotFoundPage } from '@/modules/not-found/NotFoundPage'
@@ -26,6 +27,7 @@ export function AppRoutes() {
         <Route path="/tickets/novo" element={<NewTicketPage />} />
         <Route path="/tickets/:id" element={<TicketDetailPage />} />
         <Route path="/contatos" element={<ContactsPage />} />
+        <Route path="/equipes" element={<TeamsPage />} />
         <Route path="/relatorios" element={<ReportsPage />} />
         <Route path="/configuracoes" element={<SettingsPage />} />
       </Route>

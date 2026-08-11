@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Headset, LayoutDashboard, LifeBuoy, Users, MessagesSquare, BarChart3, Settings, X } from 'lucide-react'
+import { Headset, LayoutDashboard, LifeBuoy, Users, MessagesSquare, BarChart3, Settings, UsersRound, X } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 
 const items = [
@@ -7,6 +7,7 @@ const items = [
   { to: '/atendimento', label: 'Atendimento', icon: MessagesSquare },
   { to: '/tickets', label: 'Tickets', icon: LifeBuoy },
   { to: '/contatos', label: 'Contatos', icon: Users },
+  { to: '/equipes', label: 'Equipes', icon: UsersRound },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ]

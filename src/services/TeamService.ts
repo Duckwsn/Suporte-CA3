@@ -11,6 +11,8 @@ export const TeamService = {
 
   update: (id: string, data: Partial<Team>) => api.patch<Team>(`/teams/${id}`, data),
 
+  removeTeam: (id: string) => api.delete<void>(`/teams/${id}`),
+
   addMember: (id: string, userId: string) => api.post<Team>(`/teams/${id}/members`, { userId }),
 
   removeMember: (id: string, userId: string) => api.delete<Team>(`/teams/${id}/members/${userId}`),
