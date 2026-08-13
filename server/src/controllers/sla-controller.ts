@@ -3,8 +3,9 @@ import prisma from '../lib/prisma'
 import { AppError } from '../core/errors'
 import { asyncHandler } from '../utils/asyncHandler'
 
-export const listPolicies = asyncHandler(async (_req: Request, res: Response) => {
+export const listPolicies = asyncHandler(async (req: Request, res: Response) => {
   const items = await prisma.slaPolicy.findMany({
+    where: { organizationId: req.user!.organizationId },
     orderBy: { name: 'asc' },
     include: { _count: { select: { tickets: true } } },
   })
@@ -21,6 +22,7 @@ export const createPolicy = asyncHandler(async (req: Request, res: Response) => 
     data: {
       name: String(name),
       category: category ?? null,
+      organizationId: req.user!.organizationId,
       responseTimeMinutes: Number(responseTimeMinutes),
       resolutionTimeMinutes: Number(resolutionTimeMinutes),
       businessHoursOnly: businessHoursOnly ?? true,
@@ -39,11 +41,16 @@ export const updatePolicy = asyncHandler(async (req: Request, res: Response) => 
   if (businessHoursOnly !== undefined) data.businessHoursOnly = Boolean(businessHoursOnly)
   if (isActive !== undefined) data.isActive = Boolean(isActive)
 
-  const policy = await prisma.slaPolicy.update({ where: { id: req.params.id }, data })
+  const policy = await prisma.slaPolicy.update({
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
+    data,
+  })
   res.json(policy)
 })
 
 export const removePolicy = asyncHandler(async (req: Request, res: Response) => {
-  await prisma.slaPolicy.delete({ where: { id: req.params.id } })
+  await prisma.slaPolicy.delete({
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
+  })
   res.status(204).end()
 })

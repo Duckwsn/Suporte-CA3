@@ -32,8 +32,12 @@ Thumbs.db
 *.tsbuildinfo
 coverage/
 
-# Temporários de teste
+# Temporï¿½rios de teste
 login.json
 tok.txt
 server.log
 web.log
+
+# Playwright
+test-results/
+playwright-report/

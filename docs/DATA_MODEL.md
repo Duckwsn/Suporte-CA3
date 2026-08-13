@@ -8,21 +8,25 @@
 ## 1. Diagrama conceitual
 
 ```
-User ──── Team ──── (supervisor: User)
-  │  │  │
-  │  │  └── AgentTeams (N:M)
+Organization ──── User (1:N)
+  │  │  │  │  │  │  │  │
+  │  │  │  │  │  │  │  └── Team.supervisor
+  │  │  │  │  │  │  │
+  │  │  │  │  │  │  └── Conversation.assignee
+  │  │  │  │  │  └── Ticket.assignee
+  │  │  │  │  └── Notification.recipient
+  │  │  │  └── AuditLog.user
+  │  │  └── CsatRating.assignee
   │  │
-  │  ├── Conversation.assignee
-  │  ├── Ticket.assignee
-  │  └── Notification.recipient
-  │
-Contact ──── Conversation (1:N) ──── Message (1:N)
-   │               │
-   │               └── Ticket (1:N) ──── SlaBreach (1:N)
-   │                                        │
-   └─────────────── SlaPolicy (N:1) ────────┘
-
-WebhookEvent, Notification, AuditLog
+  │  ├── Team (1:N)
+  │  ├── Contact (1:N)
+  │  ├── Conversation (1:N) ──── Message (1:N)
+  │  ├── Ticket (1:N) ──── SlaBreach (1:N)
+  │  ├── SlaPolicy (1:N)
+  │  ├── CsatRating (1:N)
+  │  ├── Notification (1:N)
+  │  ├── AuditLog (1:N)
+  │  └── WebhookEvent (1:N)
 ```
 
 ## 2. Enums
@@ -42,6 +46,16 @@ WebhookEvent, Notification, AuditLog
 
 ## 3. Modelos
 
+### Organization
+| Campo | Tipo | Observação |
+| --- | --- | --- |
+| id | UUID | PK |
+| name | String | nome da organização |
+| slug | String | único, URL-friendly |
+| isActive | Boolean | padrão `true` |
+| logoUrl | String? | |
+| createdAt / updatedAt | DateTime | |
+
 ### User
 | Campo | Tipo | Observação |
 | --- | --- | --- |
@@ -50,6 +64,7 @@ WebhookEvent, Notification, AuditLog
 | email | String | único, normalizado (lowercase) |
 | passwordHash | String | bcrypt |
 | role | Role | padrão `AGENT` |
+| organizationId | UUID | FK → Organization |
 | teamId | UUID? | FK → Team |
 | isActive | Boolean | padrão `true` |
 | avatarUrl | String? | |
@@ -59,8 +74,9 @@ WebhookEvent, Notification, AuditLog
 | Campo | Tipo | Observação |
 | --- | --- | --- |
 | id | UUID | PK |
-| name | String | único |
+| name | String | único por organização |
 | description | String? | |
+| organizationId | UUID | FK → Organization |
 | supervisorId | UUID? | FK → User |
 | members | User[] | relação |
 
@@ -73,6 +89,7 @@ WebhookEvent, Notification, AuditLog
 | email | String? | |
 | whatsappId | String? | ID do contato no WhatsApp |
 | notes | String? | |
+| organizationId | UUID | FK → Organization |
 | createdAt / updatedAt | DateTime | |
 
 ### Conversation
@@ -82,6 +99,7 @@ WebhookEvent, Notification, AuditLog
 | channel | ConversationChannel | |
 | status | ConversationStatus | |
 | contactId | UUID | FK → Contact |
+| organizationId | UUID | FK → Organization |
 | assigneeId | UUID? | FK → User (atendente) |
 | title | String? | |
 | startedAt | DateTime | |
@@ -105,7 +123,7 @@ WebhookEvent, Notification, AuditLog
 | Campo | Tipo | Observação |
 | --- | --- | --- |
 | id | UUID | PK |
-| number | Int | sequencial único |
+| number | Int | sequencial único por organização |
 | subject | String | |
 | description | String | |
 | status | TicketStatus | |
@@ -113,6 +131,7 @@ WebhookEvent, Notification, AuditLog
 | category | String | ex.: `HARDWARE`, `SOFTWARE`, `REDE` |
 | conversationId | UUID? | FK → Conversation |
 | contactId | UUID? | FK → Contact |
+| organizationId | UUID | FK → Organization |
 | assigneeId | UUID? | FK → User |
 | teamId | UUID? | FK → Team |
 | slaPolicyId | UUID? | FK → SlaPolicy |
@@ -126,6 +145,7 @@ WebhookEvent, Notification, AuditLog
 | id | UUID | PK |
 | name | String | |
 | category | String? | categoria-alvo (nulo = global) |
+| organizationId | UUID | FK → Organization |
 | responseTimeMinutes | Int | prazo primeira resposta |
 | resolutionTimeMinutes | Int | prazo resolução |
 | businessHoursOnly | Boolean | padrão `true` |

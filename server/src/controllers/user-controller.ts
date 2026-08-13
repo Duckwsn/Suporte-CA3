@@ -9,6 +9,7 @@ const userSelect = {
   name: true,
   email: true,
   role: true,
+  organizationId: true,
   teamId: true,
   isActive: true,
   avatarUrl: true,
@@ -18,7 +19,7 @@ const userSelect = {
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const { role, search, page = '1', limit = '20' } = req.query
-  const where: Record<string, unknown> = {}
+  const where: Record<string, unknown> = { organizationId: req.user!.organizationId }
 
   if (role) where.role = role
   if (search) {
@@ -40,8 +41,8 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
 })
 
 export const detail = asyncHandler(async (req: Request, res: Response) => {
-  const user = await prisma.user.findUnique({
-    where: { id: req.params.id },
+  const user = await prisma.user.findFirst({
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
     select: { ...userSelect, passwordHash: false },
   })
   if (!user) throw AppError.notFound('Usuário não encontrado')
@@ -61,6 +62,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
       email: String(email).toLowerCase().trim(),
       passwordHash,
       role: role ?? 'AGENT',
+      organizationId: req.user!.organizationId,
       teamId: teamId ?? null,
       isActive: isActive ?? true,
     },
@@ -81,13 +83,17 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   if (isActive !== undefined) data.isActive = Boolean(isActive)
   if (password) data.passwordHash = await bcrypt.hash(String(password), 10)
 
-  const user = await prisma.user.update({ where: { id: req.params.id }, data, select: userSelect })
+  const user = await prisma.user.update({
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
+    data,
+    select: userSelect,
+  })
   res.json(user)
 })
 
 export const deactivate = asyncHandler(async (req: Request, res: Response) => {
   const user = await prisma.user.update({
-    where: { id: req.params.id },
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
     data: { isActive: false },
     select: userSelect,
   })

@@ -6,6 +6,7 @@ const EXPIRES_IN = '12h'
 export interface TokenPayload {
   userId: string
   role: string
+  organizationId: string
 }
 
 export function signToken(payload: TokenPayload): string {

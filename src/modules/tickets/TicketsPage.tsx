@@ -4,6 +4,7 @@ import { Plus, Search } from 'lucide-react'
 import { PageHeader, Card, Button, Input, Select, LoadingState, ErrorState, Badge } from '@/shared/components'
 import { statusTone, priorityTone } from '@/shared/components/Badge'
 import { TicketService } from '@/services/TicketService'
+import { useSocketEvent } from '@/hooks/useRealtime'
 import { statusLabels, priorityLabels } from '@/utils/labels'
 import { formatDateTime } from '@/utils/formatDate'
 import type { Ticket } from '@/types'
@@ -19,6 +20,14 @@ export function TicketsPage() {
   useEffect(() => {
     void load()
   }, [status, priority])
+
+  useSocketEvent('ticket:created', () => {
+    void load()
+  })
+
+  useSocketEvent('ticket:updated', () => {
+    void load()
+  })
 
   async function load() {
     setLoading(true)

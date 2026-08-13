@@ -10,6 +10,7 @@ router.use(supervisorOrAdmin)
 
 router.get('/kpis', controller.kpis)
 router.get('/volume', controller.volume)
+router.get('/analytics', controller.analytics)
 router.get('/export', controller.exportCsv)
 
 export default router

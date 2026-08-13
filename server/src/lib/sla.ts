@@ -67,13 +67,17 @@ function addWallClockMinutes(from: Date, minutes: number): Date {
 
 export async function resolveSlaForTicket(input: {
   category?: string | null
+  organizationId?: string
   from?: Date
 }): Promise<SlaResult> {
+  const where: Record<string, unknown> = {
+    isActive: true,
+    OR: [{ category: input.category ?? null }, { category: null }],
+  }
+  if (input.organizationId) where.organizationId = input.organizationId
+
   const policy = await prisma.slaPolicy.findFirst({
-    where: {
-      isActive: true,
-      OR: [{ category: input.category ?? null }, { category: null }],
-    },
+    where,
     orderBy: { category: 'asc' },
   })
 

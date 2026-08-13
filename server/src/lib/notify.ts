@@ -1,30 +1,14 @@
-import prisma from './prisma'
 import type { NotificationType } from '@prisma/client'
+import { enqueueNotification } from '../queue'
 
-export async function notify(recipientId: string, type: NotificationType, title: string, body?: string) {
-  return prisma.notification.create({
-    data: { recipientId, type, title, body },
-  })
+export function notify(recipientId: string, organizationId: string, type: NotificationType, title: string, body?: string) {
+  return enqueueNotification({ kind: 'notify', recipientId, organizationId, type, title, body })
 }
 
-export async function notifyTeam(teamId: string, type: NotificationType, title: string, body?: string) {
-  const members = await prisma.user.findMany({
-    where: { teamId, isActive: true },
-    select: { id: true },
-  })
-  if (members.length === 0) return
-  await prisma.notification.createMany({
-    data: members.map((m) => ({ recipientId: m.id, type, title, body })),
-  })
+export function notifyTeam(teamId: string, organizationId: string, type: NotificationType, title: string, body?: string) {
+  return enqueueNotification({ kind: 'notifyTeam', teamId, organizationId, type, title, body })
 }
 
-export async function notifyAllAgents(type: NotificationType, title: string, body?: string) {
-  const agents = await prisma.user.findMany({
-    where: { isActive: true, role: { in: ['AGENT', 'SUPERVISOR', 'ADMIN'] } },
-    select: { id: true },
-  })
-  if (agents.length === 0) return
-  await prisma.notification.createMany({
-    data: agents.map((m) => ({ recipientId: m.id, type, title, body })),
-  })
+export function notifyAllAgents(organizationId: string, type: NotificationType, title: string, body?: string) {
+  return enqueueNotification({ kind: 'notifyAllAgents', organizationId, type, title, body })
 }

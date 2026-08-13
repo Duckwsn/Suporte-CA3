@@ -246,4 +246,4 @@ Se qualquer item não estiver marcado, a tarefa **não** está pronta.
 
 **Este documento é permanente e vivo.** Ele deve ser atualizado sempre que uma nova decisão arquitetural relevante for tomada, mantendo-se, ele próprio, um exemplo do princípio que exige: documentação sempre em dia.
 
-Nome da sessão: New session - 2026-08-06-06T16:32:19.737Z
+Nome da sessão: New session - 2026-08-06-06T16:32:19.737Z   P

@@ -9,11 +9,11 @@
 
 ### POST /api/auth/login
 Body: `{ "email": string, "password": string }`
-Resposta `200`: `{ "token": string, "user": User }`
+Resposta `200`: `{ "token": string, "user": User, "organization": Organization }`
 
 ### POST /api/auth/register
-Body: `{ "name": string, "email": string, "password": string, "role?": Role }`
-Resposta `201`: `{ "token": string, "user": User }`
+Body: `{ "name": string, "email": string, "password": string, "organizationId": string, "role?": Role }`
+Resposta `201`: `{ "token": string, "user": User, "organization": Organization }`
 
 ### GET /api/auth/me
 Header: Bearer. Resposta `200`: `User`
@@ -126,13 +126,36 @@ Header: Bearer. Resposta `200`: `User`
 
 | Método | Rota | Descrição |
 | --- | --- | --- |
-| GET | `/api/reports/kpis` | KPIs globais `{ ticketsOpen, conversationsActive, slaCompliance, avgFirstResponse }` |
+| GET | `/api/reports/kpis` | KPIs globais `{ ticketsOpen, conversationsActive, slaCompliance, avgFirstResponseMinutes, resolvedTickets }` |
 | GET | `/api/reports/volume` | Volume por dia (query `from`, `to`) |
-| GET | `/api/reports/export` | Exporta CSV |
+| GET | `/api/reports/analytics` | Breakdown de tickets (query `from`, `to`): `{ byStatus, byPriority, byCategory, byTeam, byChannel }` |
+| GET | `/api/reports/export` | Exporta CSV (query `type`: tickets|conversations|csat; `from`, `to`) |
 
 ---
 
-## 11. Erros
+## 11. CSAT (`/api/csat`)
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| POST | `/api/csat/conversations/:id` | Submete avaliação `{ rating: 1-5, comment? }` |
+| GET | `/api/csat/conversations/:id` | Busca avaliação de uma conversa |
+| GET | `/api/csat/summary` | Resumo CSAT (query `days`): `{ total, average, promoterRate, distribution, byAssignee, byTeam }` |
+
+---
+
+## 12. Organizações (`/api/organizations`) — ADMIN
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| GET | `/api/organizations` | Lista organizações |
+| GET | `/api/organizations/:id` | Detalhe de organização |
+| POST | `/api/organizations` | Cria organização `{ "name", "slug" }` |
+| PUT | `/api/organizations/:id` | Atualiza `{ "name?", "slug?", "isActive?" }` |
+| DELETE | `/api/organizations/:id` | Remove organização |
+
+---
+
+## 13. Erros
 
 Formato padronizado pelo middleware `error-handler`:
 

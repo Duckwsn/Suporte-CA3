@@ -5,7 +5,7 @@ import { asyncHandler } from '../utils/asyncHandler'
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const { search, page = '1', limit = '20' } = req.query
-  const where: Record<string, unknown> = {}
+  const where: Record<string, unknown> = { organizationId: req.user!.organizationId }
   if (search) {
     where.OR = [
       { name: { contains: String(search), mode: 'insensitive' } },
@@ -32,8 +32,8 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
 })
 
 export const detail = asyncHandler(async (req: Request, res: Response) => {
-  const contact = await prisma.contact.findUnique({
-    where: { id: req.params.id },
+  const contact = await prisma.contact.findFirst({
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
     include: {
       conversations: { orderBy: { lastMessageAt: 'desc' }, take: 10 },
       tickets: { orderBy: { createdAt: 'desc' }, take: 10 },
@@ -54,6 +54,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
       email: email ?? null,
       whatsappId: whatsappId ?? null,
       notes: notes ?? null,
+      organizationId: req.user!.organizationId,
     },
   })
   res.status(201).json(contact)
@@ -68,13 +69,16 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   if (whatsappId !== undefined) data.whatsappId = whatsappId
   if (notes !== undefined) data.notes = notes
 
-  const contact = await prisma.contact.update({ where: { id: req.params.id }, data })
+  const contact = await prisma.contact.update({
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
+    data,
+  })
   res.json(contact)
 })
 
 export const remove = asyncHandler(async (req: Request, res: Response) => {
-  const contact = await prisma.contact.findUnique({
-    where: { id: req.params.id },
+  const contact = await prisma.contact.findFirst({
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
     include: { _count: { select: { conversations: true, tickets: true } } },
   })
   if (!contact) throw AppError.notFound('Contato não encontrado')

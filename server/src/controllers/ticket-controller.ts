@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import prisma from '../lib/prisma'
 import { resolveSlaForTicket } from '../lib/sla'
 import { notify, notifyTeam } from '../lib/notify'
+import { enqueueRealtime } from '../queue'
 import { AppError } from '../core/errors'
 import { asyncHandler } from '../utils/asyncHandler'
 
@@ -16,7 +17,7 @@ const ticketInclude = {
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const { status, priority, category, assigneeId, teamId, contactId, search, page = '1', limit = '20' } = req.query
-  const where: Record<string, unknown> = {}
+  const where: Record<string, unknown> = { organizationId: req.user!.organizationId }
 
   if (status) where.status = status
   if (priority) where.priority = priority
@@ -50,8 +51,8 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
 })
 
 export const detail = asyncHandler(async (req: Request, res: Response) => {
-  const ticket = await prisma.ticket.findUnique({
-    where: { id: req.params.id },
+  const ticket = await prisma.ticket.findFirst({
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
     include: {
       ...ticketInclude,
       auditLogs: { orderBy: { createdAt: 'desc' }, take: 20 },
@@ -87,6 +88,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
       category: category ?? null,
       conversationId: conversationId ?? null,
       contactId: contactId ?? null,
+      organizationId: req.user!.organizationId,
       assigneeId: assigneeId ?? null,
       teamId: teamId ?? req.user?.teamId ?? null,
       slaPolicyId: sla.slaPolicyId,
@@ -102,16 +104,19 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
       action: 'ticket.created',
       entityType: 'Ticket',
       entityId: ticket.id,
+      organizationId: req.user!.organizationId,
       meta: { number: ticket.number },
     },
   })
 
   if (assigneeId) {
-    await notify(assigneeId, 'TICKET_ATRIBUIDO', 'Ticket atribuído', `#${ticket.number} ${ticket.subject}`)
+    await notify(assigneeId, req.user!.organizationId, 'TICKET_ATRIBUIDO', 'Ticket atribuído', `#${ticket.number} ${ticket.subject}`)
   }
   if (teamId) {
-    await notifyTeam(teamId, 'TICKET_ATRIBUIDO', 'Novo ticket na equipe', `#${ticket.number} ${ticket.subject}`)
+    await notifyTeam(teamId, req.user!.organizationId, 'TICKET_ATRIBUIDO', 'Novo ticket na equipe', `#${ticket.number} ${ticket.subject}`)
   }
+
+  enqueueRealtime('ticket:created', { ticket })
 
   res.status(201).json(ticket)
 })
@@ -133,8 +138,8 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
       data.resolvedAt = new Date()
     }
     if (status === 'ABERTO') {
-      const current = await prisma.ticket.findUnique({
-        where: { id: req.params.id },
+      const current = await prisma.ticket.findFirst({
+        where: { id: req.params.id, organizationId: req.user!.organizationId },
         select: { category: true },
       })
       const sla = await resolveSlaForTicket({ category: category ?? current?.category ?? null })
@@ -146,7 +151,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const ticket = await prisma.ticket.update({
-    where: { id: req.params.id },
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
     data,
     include: ticketInclude,
   })
@@ -157,38 +162,42 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
       action: 'ticket.updated',
       entityType: 'Ticket',
       entityId: ticket.id,
+      organizationId: req.user!.organizationId,
       meta: { changes: Object.keys(data) },
     },
   })
 
   if (assigneeId) {
-    await notify(assigneeId, 'TICKET_ATRIBUIDO', 'Ticket atribuído', `#${ticket.number} ${ticket.subject}`)
+    await notify(assigneeId, req.user!.organizationId, 'TICKET_ATRIBUIDO', 'Ticket atribuído', `#${ticket.number} ${ticket.subject}`)
   }
+
+  enqueueRealtime('ticket:updated', { ticket })
 
   res.json(ticket)
 })
 
 export const resolve = asyncHandler(async (req: Request, res: Response) => {
   const ticket = await prisma.ticket.update({
-    where: { id: req.params.id },
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
     data: { status: 'RESOLVIDO', resolvedAt: new Date() },
     include: ticketInclude,
   })
 
   await prisma.slaBreach.updateMany({ where: { ticketId: ticket.id, resolved: false }, data: { resolved: true } })
+  enqueueRealtime('ticket:updated', { ticket })
   res.json(ticket)
 })
 
 export const reopen = asyncHandler(async (req: Request, res: Response) => {
-  const current = await prisma.ticket.findUnique({
-    where: { id: req.params.id },
+  const current = await prisma.ticket.findFirst({
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
     select: { category: true },
   })
   if (!current) throw AppError.notFound('Ticket não encontrado')
 
   const sla = await resolveSlaForTicket({ category: current.category })
   const ticket = await prisma.ticket.update({
-    where: { id: req.params.id },
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
     data: {
       status: 'ABERTO',
       firstResponseAt: null,
@@ -198,5 +207,6 @@ export const reopen = asyncHandler(async (req: Request, res: Response) => {
     },
     include: ticketInclude,
   })
+  enqueueRealtime('ticket:updated', { ticket })
   res.json(ticket)
 })

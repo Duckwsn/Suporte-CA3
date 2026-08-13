@@ -91,14 +91,38 @@ HTTP → routes → controller → serviço (caso de uso) → Prisma → Postgre
 | `sla-breaches` | a cada 5 min | Marca violações de SLA em tickets abertos |
 | `purge-events` | diário | Limpa eventos de webhook antigos/processados |
 
-## 7. Integrações
+## 7. Filas assíncronas (BullMQ + Redis)
+
+Processamento assíncrono via BullMQ com workers que consomem filas Redis.
+
+| Fila | Worker | Responsabilidade |
+| --- | --- | --- |
+| `suporte-ca3-notifications` | `NotificationJob` | Cria notificações no DB e emite via Socket.IO |
+| `suporte-ca3-deliveries` | `MessageDeliveryJob` | Marca mensagens como entregues |
+| `suporte-ca3-realtime` | `RealtimeJob` | Broadcast de eventos (conversas, tickets) via Socket.IO |
+
+**Fluxo:** Controllers → `enqueueNotification/enqueueDelivery/enqueueRealtime` → BullMQ → Workers → Prisma + Socket.IO.
+
+**Configuração:** `REDIS_URL` no `.env` (padrão: `redis://localhost:6379`).
+
+**Graceful shutdown:** `stopQueueWorkers()` é chamado no SIGTERM/SIGINT para encerrar workers graciosamente.
+
+## 8. Tempo real (Socket.IO)
+
+- Server: `server/src/lib/realtime.ts` — JWT auth, rooms por `user:{id}`, `role:{role}`, `agents`, `conversation:{id}`.
+- Client: `src/core/socket.ts` + `src/hooks/useRealtime.ts` — conecta com token, expõe `useSocketEvent`.
+- Eventos: `conversation:new`, `conversation:updated`, `conversation:message`, `ticket:created`, `ticket:updated`, `notification:new`.
+- Frontend usa Socket.IO para atualizações imediatas + polling como fallback (5s).
+
+## 9. Integrações
 
 ### WhatsApp Business
 - Endpoint `POST /api/whatsapp/webhook` — recebe eventos, valida token, persiste `WebhookEvent` e processa.
 - Processamento: resolve contato pelo telefone, cria/atualiza conversa e mensagem.
+- Emite eventos `conversation:new` e `conversation:message` via Socket.IO para agentes.
 - Estratégia detalhada em [ADR-0003](./adr/0003-whatsapp-integration.md).
 
-## 8. Decisões arquiteturais
+## 10. Decisões arquiteturais
 
 Ver [docs/adr](./adr/):
 - [0001 — Stack tecnológica](./adr/0001-stack.md)
@@ -106,9 +130,38 @@ Ver [docs/adr](./adr/):
 - [0003 — Integração WhatsApp](./adr/0003-whatsapp-integration.md)
 - [0004 — Estratégia de tempo real](./adr/0004-realtime-strategy.md)
 - [0005 — Motor de SLA](./adr/0005-sla-engine.md)
+- [0006 — Multi-tenancy](./adr/0006-multi-tenancy.md)
 
-## 9. Futuro / evolução
+## 11. Multi-tenancy
 
-- WebSocket (Socket.IO) para entrega imediata de mensagens — ver ADR-0004.
-- Fila de mensagens com Redis para processamento assíncrono.
-- Exportação avançada e BI.
+O sistema suporta multi-organização via modelo `Organization`. Todos os dados são escopados por `organizationId`:
+
+- **Schema**: Modelos `User`, `Team`, `Contact`, `Conversation`, `Ticket`, `SlaPolicy`, `CsatRating`, `Notification`, `AuditLog` e `WebhookEvent` possuem FK `organizationId` (NOT NULL, exceto WebhookEvent).
+- **JWT**: Token inclui `organizationId`. Middleware `auth` valida a organização e a injeta em `req.user.organizationId`.
+- **Controllers**: Todas as queries e creates são filtrados por `organizationId`.
+- **Organização ativa**: Middleware verifica se a organização está ativa antes de processar requisições.
+- **Seed**: Cria organização padrão "CA3 Tecnologia" e atribui todos os dados existentes a ela.
+- **Frontend**: Página `/organizacoes` (admin) para CRUD de organizações.
+
+## 12. Internacionalização (i18n)
+
+- **Biblioteca**: react-i18next + i18next + i18next-browser-languagedetector.
+- **Idiomas**: pt-BR (padrão) e en.
+- **Traduções**: arquivos `src/i18n/locales/pt-BR.json` e `en.json` com chaves organizadas por módulo (auth, nav, dashboard, tickets, etc.).
+- **Detecção**: localStorage > navigator; fallback para pt-BR.
+- **Uso**: `useTranslation()` hook em componentes; `t('chave')` para tradução.
+- **Language Switcher**: componente `LanguageSwitcher` na página de Configurações.
+
+## 13. PWA (Progressive Web App)
+
+- **Plugin**: vite-plugin-pwa com `registerType: 'autoUpdate'`.
+- **Manifest**: name, short_name, description, theme_color, display: standalone, icons SVG.
+- **Service Worker**: workbox com globPatterns para assets; runtimeCaching para API (`NetworkFirst`).
+- **Meta tags**: theme-color, apple-mobile-web-app-capable, viewport-fit=cover.
+- **Offline**: assets cacheados pelo service worker; API com strategy NetworkFirst.
+
+## 14. Futuro / evolução
+
+- Integrações externas (e-mail, SMS, outros canais).
+- Relatórios avançados e BI.
+- Dashboard CSAT com tendências.

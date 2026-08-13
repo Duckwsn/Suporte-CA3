@@ -23,7 +23,7 @@
 - [x] Frontend: tokens, componentes shared, layout
 - [x] Frontend: login, dashboard, atendimento, tickets, contatos, equipes
 - [x] Seed de desenvolvimento
-- [ ] Validação e2e automatizada (Playwright) do fluxo cliente→atendente→ticket
+- [x] Validação e2e automatizada (Playwright) do fluxo cliente→atendente→ticket
 
 ## Fase 2 — Operação
 - [x] Webhook WhatsApp (recepção + processamento) — validado E2E
@@ -32,15 +32,20 @@
 - [x] Painel de administração (usuários, canais, config)
 
 ## Fase 3 — Inteligência operacional
-- [ ] WebSocket para mensagens instantâneas
-- [ ] Fila assíncrona (Redis) para envio de mensagens/notificações
-- [ ] Exportações avançadas e BI
-- [ ] Métricas de satisfação (CSAT)
+- [x] WebSocket (Socket.IO) — infraestrutura server+client, JWT auth, rooms, eventos `conversation:new/updated/message` e `ticket:created/updated` (via BullMQ realtime queue)
+- [x] Fila assíncrona (BullMQ/Redis) — 3 filas: notificações, entregas WhatsApp, realtime; workers operacionais; graceful shutdown
+- [x] Métricas de satisfação (CSAT) — backend (submit, summary, distribution) + frontend (modal de avaliação, página dedicada `/csat` com distribuição, breakdowns e alertas)
+- [x] Corrigir integração: controllers emitem eventos Socket.IO corretamente
+- [x] Completar integração: WhatsApp controller emite `conversation:message` e `conversation:new` via socket
+- [x] Completar integração: ticket controller emite `ticket:created` e `ticket:updated` via socket
+- [x] Unificar `notify()` para usar fila BullMQ
+- [x] Exportações avançadas — filtros de período, analytics breakdown (status, prioridade, categoria, canal)
+- [x] Frontend: Socket.IO para atualizações imediatas + polling como fallback
 
 ## Fase 4 — Escala
-- [ ] Multi-tenant / multi-organização
-- [ ] Internacionalização (i18n)
-- [ ] Apps (PWA) e integrações externas
+- [x] Multi-tenant / multi-organização — Organization model, JWT orgId, tenant scoping em todos os controllers, seed, frontend org management page
+- [x] Internacionalização (i18n) — react-i18next, traduções pt-BR/en, language switcher em Configurações
+- [x] Apps (PWA) — vite-plugin-pwa, manifest, service worker, offline support, runtime caching
 
 ---
 

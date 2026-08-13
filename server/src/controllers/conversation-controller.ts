@@ -3,6 +3,7 @@ import prisma from '../lib/prisma'
 import { notifyAllAgents } from '../lib/notify'
 import { AppError } from '../core/errors'
 import { asyncHandler } from '../utils/asyncHandler'
+import { enqueueRealtime, enqueueDelivery } from '../queue'
 
 const conversationInclude = {
   contact: { select: { id: true, name: true, phone: true, email: true, whatsappId: true } },
@@ -13,7 +14,7 @@ const conversationInclude = {
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const { status, channel, assigneeId, contactId, page = '1', limit = '20' } = req.query
-  const where: Record<string, unknown> = {}
+  const where: Record<string, unknown> = { organizationId: req.user!.organizationId }
 
   if (status) where.status = status
   if (channel) where.channel = channel
@@ -38,8 +39,8 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
 })
 
 export const detail = asyncHandler(async (req: Request, res: Response) => {
-  const conversation = await prisma.conversation.findUnique({
-    where: { id: req.params.id },
+  const conversation = await prisma.conversation.findFirst({
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
     include: {
       ...conversationInclude,
       messages: { orderBy: { createdAt: 'asc' } },
@@ -54,13 +55,14 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
   const { channel = 'WEB', contactId, title } = req.body ?? {}
   if (!contactId) throw AppError.badRequest('contactId é obrigatório')
 
-  const contact = await prisma.contact.findUnique({ where: { id: contactId } })
+  const contact = await prisma.contact.findFirst({ where: { id: contactId, organizationId: req.user!.organizationId } })
   if (!contact) throw AppError.notFound('Contato não encontrado')
 
   const conversation = await prisma.conversation.create({
     data: {
       channel,
       contactId,
+      organizationId: req.user!.organizationId,
       title: title ?? null,
       status: 'AGUARDANDO_ATENDENTE',
     },
@@ -68,10 +70,13 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
   })
 
   await notifyAllAgents(
+    req.user!.organizationId,
     'NOVA_MENSAGEM',
     'Nova conversa',
     `Nova conversa de ${contact.name}`,
   )
+
+  enqueueRealtime('conversation:new', { conversation })
 
   res.status(201).json(conversation)
 })
@@ -81,7 +86,7 @@ export const assign = asyncHandler(async (req: Request, res: Response) => {
   if (!assigneeId) throw AppError.badRequest('assigneeId é obrigatório')
 
   const conversation = await prisma.conversation.update({
-    where: { id: req.params.id },
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
     data: {
       assigneeId,
       status: 'EM_ATENDIMENTO',
@@ -89,6 +94,7 @@ export const assign = asyncHandler(async (req: Request, res: Response) => {
     },
     include: conversationInclude,
   })
+  enqueueRealtime('conversation:new', { conversation })
   res.json(conversation)
 })
 
@@ -100,13 +106,14 @@ export const changeStatus = asyncHandler(async (req: Request, res: Response) => 
   }
 
   const conversation = await prisma.conversation.update({
-    where: { id: req.params.id },
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
     data: {
       status,
       resolvedAt: status === 'RESOLVIDO' || status === 'FECHADO' ? new Date() : null,
     },
     include: conversationInclude,
   })
+  enqueueRealtime('conversation:new', { conversation })
   res.json(conversation)
 })
 
@@ -128,11 +135,16 @@ export const sendMessage = asyncHandler(async (req: Request, res: Response) => {
   if (!senderType) throw AppError.badRequest('senderType é obrigatório')
   if (!body && !mediaUrl) throw AppError.badRequest('Conteúdo da mensagem é obrigatório')
 
-  const conversation = await prisma.conversation.findUnique({
-    where: { id: req.params.id },
-    include: { assignee: { select: { id: true } } },
+  const conversation = await prisma.conversation.findFirst({
+    where: { id: req.params.id, organizationId: req.user!.organizationId },
+    include: {
+      assignee: { select: { id: true } },
+      contact: { select: { id: true, name: true } },
+    },
   })
   if (!conversation) throw AppError.notFound('Conversa não encontrada')
+
+  const isWhatsAppOutbound = senderType === 'AGENT' && conversation.channel === 'WHATSAPP'
 
   const message = await prisma.message.create({
     data: {
@@ -141,7 +153,7 @@ export const sendMessage = asyncHandler(async (req: Request, res: Response) => {
       senderId: senderType === 'AGENT' ? req.user!.id : null,
       body: body ?? '',
       mediaUrl: mediaUrl ?? null,
-      status: senderType === 'AGENT' ? 'ENTREGUE' : 'ENVIADA',
+      status: isWhatsAppOutbound ? 'ENVIADA' : senderType === 'AGENT' ? 'ENTREGUE' : 'ENVIADA',
     },
   })
 
@@ -152,6 +164,12 @@ export const sendMessage = asyncHandler(async (req: Request, res: Response) => {
       status: senderType === 'AGENT' ? 'EM_ATENDIMENTO' : conversation.status,
     },
   })
+
+  enqueueRealtime('conversation:message', { conversationId: conversation.id, message })
+
+  if (isWhatsAppOutbound) {
+    await enqueueDelivery({ kind: 'whatsapp-outbound', messageId: message.id, conversationId: conversation.id })
+  }
 
   res.status(201).json(message)
 })

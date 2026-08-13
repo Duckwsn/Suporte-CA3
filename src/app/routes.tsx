@@ -10,7 +10,9 @@ import { ConversationsPage } from '@/modules/conversations/ConversationsPage'
 import { ContactsPage } from '@/modules/contacts/ContactsPage'
 import { TeamsPage } from '@/modules/teams/TeamsPage'
 import { ReportsPage } from '@/modules/reports/ReportsPage'
+import { CsatPage } from '@/modules/csat/CsatPage'
 import { SettingsPage } from '@/modules/settings/SettingsPage'
+import OrganizationsPage from '@/modules/organizations/OrganizationsPage'
 import { NotFoundPage } from '@/modules/not-found/NotFoundPage'
 
 export function AppRoutes() {
@@ -29,6 +31,8 @@ export function AppRoutes() {
         <Route path="/contatos" element={<ContactsPage />} />
         <Route path="/equipes" element={<TeamsPage />} />
         <Route path="/relatorios" element={<ReportsPage />} />
+        <Route path="/csat" element={<CsatPage />} />
+        <Route path="/organizacoes" element={<OrganizationsPage />} />
         <Route path="/configuracoes" element={<SettingsPage />} />
       </Route>
 

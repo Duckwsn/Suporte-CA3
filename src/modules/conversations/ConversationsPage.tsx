@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { PageHeader, Card, Button, Badge, Avatar, LoadingState, ErrorState, Input } from '@/shared/components'
+import { Star } from 'lucide-react'
+import { PageHeader, Card, Button, Badge, Avatar, LoadingState, ErrorState, Input, Modal, Textarea } from '@/shared/components'
 import { statusTone } from '@/shared/components/Badge'
 import { ConversationService } from '@/services/ConversationService'
+import { CsatService } from '@/services/ReportService'
 import { usePolling } from '@/hooks/usePolling'
+import { useSocketEvent } from '@/hooks/useRealtime'
 import { statusLabels, channelLabels } from '@/utils/labels'
 import { formatDateTime } from '@/utils/formatDate'
 import type { Conversation, Message } from '@/types'
@@ -14,11 +17,35 @@ export function ConversationsPage() {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [csatOpen, setCsatOpen] = useState(false)
+  const [csatRating, setCsatRating] = useState(0)
+  const [csatComment, setCsatComment] = useState('')
+  const [csatSaving, setCsatSaving] = useState(false)
+  const [csatDone, setCsatDone] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     void loadConversations()
   }, [])
+
+  useSocketEvent('conversation:new', () => {
+    void loadConversations()
+  })
+
+  useSocketEvent('conversation:updated', () => {
+    void loadConversations()
+    if (active) void openConversation(active.id)
+  })
+
+  useSocketEvent('conversation:message', (payload) => {
+    const { conversationId, message } = payload as { conversationId: string; message: Message }
+    void loadConversations()
+    if (active?.id === conversationId) {
+      setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]))
+    } else if (!active) {
+      // conversas fechadas achatam; deixa o polling cuidar
+    }
+  })
 
   async function loadConversations() {
     setError('')
@@ -65,6 +92,28 @@ export function ConversationsPage() {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
+
+  async function openCsat(conv: Conversation) {
+    setCsatRating(0)
+    setCsatComment('')
+    setCsatDone(false)
+    setActive(conv)
+    setMessages(conv.messages ?? [])
+    setCsatOpen(true)
+  }
+
+  async function submitCsat() {
+    if (!active || csatRating < 1 || csatSaving) return
+    setCsatSaving(true)
+    try {
+      await CsatService.submit(active.id, { rating: csatRating, comment: csatComment || undefined })
+      setCsatDone(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao enviar avaliação')
+    } finally {
+      setCsatSaving(false)
+    }
+  }
 
   const statusTabs: Array<{ value: string; label: string }> = [
     { value: 'TODAS', label: 'Todas' },
@@ -138,7 +187,12 @@ export function ConversationsPage() {
                       </p>
                     </div>
                   </div>
-                  <Badge tone={statusTone(active.status)}>{statusLabels[active.status] ?? active.status}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => void openCsat(active)}>
+                      <Star className="size-4" /> Avaliar
+                    </Button>
+                    <Badge tone={statusTone(active.status)}>{statusLabels[active.status] ?? active.status}</Badge>
+                  </div>
                 </div>
 
                 <div className="max-h-[480px] flex-1 space-y-3 overflow-y-auto p-4">
@@ -179,6 +233,44 @@ export function ConversationsPage() {
           </div>
         </div>
       )}
+
+      <Modal
+        open={csatOpen}
+        title="Avaliar atendimento"
+        onClose={() => setCsatOpen(false)}
+        width="max-w-md"
+        footer={
+          <Button onClick={() => void submitCsat()} disabled={csatRating < 1} loading={csatSaving}>
+            Enviar avaliação
+          </Button>
+        }
+      >
+        {csatDone ? (
+          <p className="py-6 text-center text-sm text-text-secondary">Avaliação registrada. Obrigado!</p>
+        ) : (
+          <div>
+            <p className="mb-3 text-sm text-text-secondary">Como foi o atendimento? (1 = ruim, 5 = excelente)</p>
+            <div className="flex justify-center gap-2 pb-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => setCsatRating(star)}
+                  className={`rounded-md p-1 transition-transform ${csatRating >= star ? 'text-brand' : 'text-muted-soft'}`}
+                  aria-label={`${star} estrela${star > 1 ? 's' : ''}`}
+                >
+                  <Star className={`size-8 ${csatRating >= star ? 'fill-current' : ''}`} />
+                </button>
+              ))}
+            </div>
+            <Textarea
+              value={csatComment}
+              onChange={(e) => setCsatComment(e.target.value)}
+              placeholder="Comentário (opcional)"
+              rows={3}
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

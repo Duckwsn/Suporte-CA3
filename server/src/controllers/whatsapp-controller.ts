@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import prisma from '../lib/prisma'
 import { isValidWebhookToken } from '../lib/whatsapp'
 import { notifyAllAgents } from '../lib/notify'
+import { enqueueRealtime } from '../queue'
 import { AppError } from '../core/errors'
 import { asyncHandler } from '../utils/asyncHandler'
 
@@ -46,9 +47,10 @@ async function processWhatsAppEvent(_eventId: string, payload: Record<string, un
   const contact = await prisma.contact.upsert({
     where: { whatsappId: phone },
     update: {},
-    create: { name: `WhatsApp ${phone}`, whatsappId: phone, phone },
+    create: { name: `WhatsApp ${phone}`, whatsappId: phone, phone, organizationId: 'default' },
   })
 
+  let isNewConversation = false
   let conversation = await prisma.conversation.findFirst({
     where: { channel: 'WHATSAPP', contactId: contact.id, status: { in: ['AGUARDANDO_ATENDENTE', 'EM_ATENDIMENTO'] } },
   })
@@ -58,27 +60,40 @@ async function processWhatsAppEvent(_eventId: string, payload: Record<string, un
       data: {
         channel: 'WHATSAPP',
         contactId: contact.id,
+        organizationId: contact.organizationId,
         status: 'AGUARDANDO_ATENDENTE',
         title: `WhatsApp ${phone}`,
       },
     })
+    isNewConversation = true
   }
 
-  await prisma.message.create({
+  const createdMessage = await prisma.message.create({
     data: {
       conversationId: conversation.id,
       senderType: 'CONTACT',
       body: String(message.body ?? ''),
       status: 'ENVIADA',
     },
+    include: { sender: { select: { id: true, name: true, role: true } } },
   })
 
-  await prisma.conversation.update({
+  const updatedConversation = await prisma.conversation.update({
     where: { id: conversation.id },
     data: { lastMessageAt: new Date() },
+    include: {
+      contact: { select: { id: true, name: true, phone: true, email: true, whatsappId: true } },
+      assignee: { select: { id: true, name: true } },
+      team: { select: { id: true, name: true } },
+    },
   })
 
-  await notifyAllAgents('NOVA_MENSAGEM', 'Nova mensagem WhatsApp', `Nova mensagem de ${contact.name}`)
+  if (isNewConversation) {
+    enqueueRealtime('conversation:new', { conversation: updatedConversation })
+  }
+  enqueueRealtime('conversation:message', { conversationId: conversation.id, message: createdMessage })
+
+  await notifyAllAgents(conversation.organizationId, 'NOVA_MENSAGEM', 'Nova mensagem WhatsApp', `Nova mensagem de ${contact.name}`)
 }
 
 function extractMessage(payload: Record<string, unknown>): { from?: unknown; body?: unknown } | null {

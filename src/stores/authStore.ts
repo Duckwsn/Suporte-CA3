@@ -1,14 +1,15 @@
 import { create } from 'zustand'
-import type { User } from '@/types'
+import type { User, Organization } from '@/types'
 import { storage } from '@/core/storage'
 import { AuthService } from '@/services/AuthService'
 
 interface AuthState {
   user: User | null
   token: string | null
+  organization: Organization | null
   loading: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (name: string, email: string, password: string, role?: string) => Promise<void>
+  register: (name: string, email: string, password: string, organizationId: string, role?: string) => Promise<void>
   logout: () => void
   hydrate: () => void
   refresh: () => Promise<void>
@@ -17,6 +18,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: storage.getUser<User>(),
   token: storage.getToken(),
+  organization: null,
   loading: false,
 
   login: async (email, password) => {
@@ -25,19 +27,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const res = await AuthService.login(email, password)
       storage.setToken(res.token)
       storage.setUser(res.user)
-      set({ token: res.token, user: res.user })
+      set({ token: res.token, user: res.user, organization: res.organization ?? null })
     } finally {
       set({ loading: false })
     }
   },
 
-  register: async (name, email, password, role) => {
+  register: async (name, email, password, organizationId, role) => {
     set({ loading: true })
     try {
-      const res = await AuthService.register(name, email, password, role)
+      const res = await AuthService.register(name, email, password, organizationId, role)
       storage.setToken(res.token)
       storage.setUser(res.user)
-      set({ token: res.token, user: res.user })
+      set({ token: res.token, user: res.user, organization: res.organization ?? null })
     } finally {
       set({ loading: false })
     }
@@ -45,7 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: () => {
     storage.clear()
-    set({ user: null, token: null })
+    set({ user: null, token: null, organization: null })
   },
 
   hydrate: () => {

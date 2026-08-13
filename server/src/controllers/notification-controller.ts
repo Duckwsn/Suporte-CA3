@@ -5,7 +5,7 @@ import { asyncHandler } from '../utils/asyncHandler'
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const { unread, page = '1', limit = '20' } = req.query
-  const where: Record<string, unknown> = { recipientId: req.user!.id }
+  const where: Record<string, unknown> = { recipientId: req.user!.id, organizationId: req.user!.organizationId }
   if (unread === 'true') where.readAt = null
 
   const take = Math.min(Number(limit) || 20, 100)
@@ -19,7 +19,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' },
     }),
     prisma.notification.count({ where }),
-    prisma.notification.count({ where: { recipientId: req.user!.id, readAt: null } }),
+    prisma.notification.count({ where: { recipientId: req.user!.id, organizationId: req.user!.organizationId, readAt: null } }),
   ])
 
   res.json({ items, total, unreadCount, page: Number(page) || 1, limit: take })
@@ -27,7 +27,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
 
 export const markRead = asyncHandler(async (req: Request, res: Response) => {
   const notification = await prisma.notification.findFirst({
-    where: { id: req.params.id, recipientId: req.user!.id },
+    where: { id: req.params.id, recipientId: req.user!.id, organizationId: req.user!.organizationId },
   })
   if (!notification) throw AppError.notFound('Notificação não encontrada')
 
@@ -40,7 +40,7 @@ export const markRead = asyncHandler(async (req: Request, res: Response) => {
 
 export const markAllRead = asyncHandler(async (req: Request, res: Response) => {
   await prisma.notification.updateMany({
-    where: { recipientId: req.user!.id, readAt: null },
+    where: { recipientId: req.user!.id, organizationId: req.user!.organizationId, readAt: null },
     data: { readAt: new Date() },
   })
   res.status(204).end()

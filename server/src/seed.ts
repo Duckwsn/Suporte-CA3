@@ -6,6 +6,15 @@ const prisma = new PrismaClient()
 async function main() {
   const passwordHash = await bcrypt.hash('Admin@123', 10)
 
+  const org = await prisma.organization.upsert({
+    where: { slug: 'ca3-tecnologia' },
+    update: {},
+    create: {
+      name: 'CA3 Tecnologia',
+      slug: 'ca3-tecnologia',
+    },
+  })
+
   const admin = await prisma.user.upsert({
     where: { email: 'admin@ca3.com.br' },
     update: {},
@@ -14,15 +23,18 @@ async function main() {
       email: 'admin@ca3.com.br',
       passwordHash,
       role: 'ADMIN',
+      organizationId: org.id,
     },
   })
 
-  const suporte = await prisma.team.upsert({
-    where: { name: 'Suporte N1' },
-    update: {},
-    create: {
+  const existingTeam = await prisma.team.findFirst({
+    where: { name: 'Suporte N1', organizationId: org.id },
+  })
+  const suporte = existingTeam ?? await prisma.team.create({
+    data: {
       name: 'Suporte N1',
       description: 'Equipe de primeiro nível de atendimento técnico',
+      organizationId: org.id,
       supervisorId: admin.id,
     },
   })
@@ -35,6 +47,7 @@ async function main() {
       email: 'agente@ca3.com.br',
       passwordHash,
       role: 'AGENT',
+      organizationId: org.id,
       teamId: suporte.id,
     },
   })
@@ -47,6 +60,7 @@ async function main() {
       email: 'cliente@ca3.com.br',
       passwordHash,
       role: 'CUSTOMER',
+      organizationId: org.id,
     },
   })
 
@@ -57,6 +71,7 @@ async function main() {
       id: '00000000-0000-0000-0000-000000000001',
       name: 'SLA Padrão',
       category: 'HARDWARE',
+      organizationId: org.id,
       responseTimeMinutes: 60,
       resolutionTimeMinutes: 480,
       businessHoursOnly: true,
@@ -71,6 +86,7 @@ async function main() {
       phone: '+55 11 99999-9999',
       whatsappId: '55-11-999999999',
       email: 'contato@demo.com.br',
+      organizationId: org.id,
     },
   })
 
@@ -81,12 +97,14 @@ async function main() {
         channel: 'WEB',
         status: 'AGUARDANDO_ATENDENTE',
         contactId: contact.id,
+        organizationId: org.id,
         title: 'Preciso de ajuda com meu equipamento',
       },
     })
   }
 
   console.log('Seed concluído.')
+  console.log(`Organização: ${org.name} (${org.slug})`)
   console.log('Usuários: admin@ca3.com.br / agente@ca3.com.br / cliente@ca3.com.br (senha: Admin@123)')
 }
 

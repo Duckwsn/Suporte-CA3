@@ -8,16 +8,28 @@ export type TicketPriority = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE'
 export type SlaBreachType = 'PRIMEIRA_RESPOSTA' | 'RESOLUCAO'
 export type NotificationType = 'TICKET_ATRIBUIDO' | 'NOVA_MENSAGEM' | 'SLA_VIOLADO'
 
+export interface Organization {
+  id: string
+  name: string
+  slug: string
+  isActive: boolean
+  logoUrl?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface User {
   id: string
   name: string
   email: string
   role: Role
+  organizationId: string
   teamId: string | null
   isActive: boolean
   avatarUrl?: string | null
   createdAt: string
   team?: { id: string; name: string } | null
+  organization?: Organization
 }
 
 export interface Team {
@@ -151,6 +163,7 @@ export interface Paginated<T> {
 export interface AuthResponse {
   token: string
   user: User
+  organization?: Organization
 }
 
 export interface ReportKpis {
@@ -164,4 +177,28 @@ export interface ReportKpis {
 export interface VolumePoint {
   date: string
   count: number
+}
+
+export interface CsatRating {
+  id: string
+  rating: number
+  comment?: string | null
+  createdAt: string
+}
+
+export interface CsatSummary {
+  total: number
+  average: number
+  promoterRate: number
+  distribution: Array<{ rating: number; count: number }>
+  byAssignee: Array<{ assigneeId: string; name: string; average: number; count: number }>
+  byTeam: Array<{ teamId: string; name: string; average: number; count: number }>
+}
+
+export interface AnalyticsBreakdown {
+  byStatus: Array<{ key: string; count: number }>
+  byPriority: Array<{ key: string; count: number }>
+  byCategory: Array<{ key: string; count: number }>
+  byTeam: Array<{ key: string; count: number }>
+  byChannel: Array<{ key: string; count: number }>
 }

@@ -10,14 +10,19 @@ const publicUserSelect = {
   name: true,
   email: true,
   role: true,
+  organizationId: true,
   teamId: true,
   isActive: true,
   avatarUrl: true,
   createdAt: true,
 } as const
 
-function buildAuthResponse(user: { id: string; role: string }) {
-  return { token: signToken({ userId: user.id, role: user.role }), user }
+function buildAuthResponse(user: { id: string; role: string; organizationId: string }) {
+  return {
+    token: signToken({ userId: user.id, role: user.role, organizationId: user.organizationId }),
+    user,
+    organization: null as { id: string; name: string; slug: string } | null,
+  }
 }
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
@@ -41,16 +46,27 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
   const safe = await prisma.user.findUniqueOrThrow({
     where: { id: user.id },
-    select: publicUserSelect,
+    select: { ...publicUserSelect, organization: { select: { id: true, name: true, slug: true } } },
   })
 
-  res.json(buildAuthResponse(safe))
+  const response = buildAuthResponse(safe)
+  response.organization = safe.organization
+  res.json(response)
 })
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { name, email, password, role } = req.body ?? {}
+  const { name, email, password, role, organizationId } = req.body ?? {}
   if (!name || !email || !password) {
     throw AppError.badRequest('Nome, e-mail e senha são obrigatórios')
+  }
+
+  if (!organizationId) {
+    throw AppError.badRequest('organizationId é obrigatório')
+  }
+
+  const org = await prisma.organization.findUnique({ where: { id: organizationId } })
+  if (!org || !org.isActive) {
+    throw AppError.badRequest('Organização inválida ou inativa')
   }
 
   const allowedRoles = ['ADMIN', 'SUPERVISOR', 'AGENT', 'CUSTOMER']
@@ -70,11 +86,14 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
       email: String(email).toLowerCase().trim(),
       passwordHash,
       role: requestedRole,
+      organizationId,
     },
-    select: publicUserSelect,
+    select: { ...publicUserSelect, organization: { select: { id: true, name: true, slug: true } } },
   })
 
-  res.status(201).json(buildAuthResponse(user))
+  const response = buildAuthResponse(user)
+  response.organization = user.organization
+  res.status(201).json(response)
 })
 
 export const me = asyncHandler(async (req: Request, res: Response) => {

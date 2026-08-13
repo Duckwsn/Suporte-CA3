@@ -9,6 +9,8 @@ import slaRoutes from './sla'
 import whatsappRoutes from './whatsapp'
 import notificationRoutes from './notifications'
 import reportRoutes from './reports'
+import csatRoutes from './csat'
+import organizationRoutes from './organizations'
 
 const router = Router()
 
@@ -22,5 +24,7 @@ router.use('/sla', slaRoutes)
 router.use('/whatsapp', whatsappRoutes)
 router.use('/notifications', notificationRoutes)
 router.use('/reports', reportRoutes)
+router.use('/csat', csatRoutes)
+router.use('/organizations', organizationRoutes)
 
 export default router

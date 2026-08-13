@@ -3,6 +3,7 @@ import { Bell, LogOut, Menu, CheckCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { NotificationService } from '@/services/ReportService'
 import { usePolling } from '@/hooks/usePolling'
+import { useSocketEvent } from '@/hooks/useRealtime'
 import type { Notification } from '@/types'
 import { Avatar } from './Avatar'
 import { timeAgo } from '@/utils/formatDate'
@@ -29,6 +30,12 @@ export function Header({ onMenuClick }: HeaderProps) {
   }
 
   usePolling(() => void load())
+
+  useSocketEvent('notification:new', (payload) => {
+    const n = payload as Notification
+    setNotifications((prev) => [n, ...prev].slice(0, 50))
+    setUnreadCount((count) => count + 1)
+  })
 
   async function markAllRead() {
     try {

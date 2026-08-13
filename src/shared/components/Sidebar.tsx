@@ -1,15 +1,18 @@
 import { NavLink } from 'react-router-dom'
-import { Headset, LayoutDashboard, LifeBuoy, Users, MessagesSquare, BarChart3, Settings, UsersRound, X } from 'lucide-react'
+import { Headset, LayoutDashboard, LifeBuoy, Users, MessagesSquare, BarChart3, Star, Settings, UsersRound, Building2, X } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
+import { useTranslation } from 'react-i18next'
 
-const items = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/atendimento', label: 'Atendimento', icon: MessagesSquare },
-  { to: '/tickets', label: 'Tickets', icon: LifeBuoy },
-  { to: '/contatos', label: 'Contatos', icon: Users },
-  { to: '/equipes', label: 'Equipes', icon: UsersRound },
-  { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
-  { to: '/configuracoes', label: 'Configurações', icon: Settings },
+const getItems = (t: (key: string) => string) => [
+  { to: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
+  { to: '/atendimento', label: t('nav.conversations'), icon: MessagesSquare },
+  { to: '/tickets', label: t('nav.tickets'), icon: LifeBuoy },
+  { to: '/contatos', label: t('nav.contacts'), icon: Users },
+  { to: '/equipes', label: t('nav.teams'), icon: UsersRound },
+  { to: '/relatorios', label: t('nav.reports'), icon: BarChart3 },
+  { to: '/csat', label: t('nav.csat'), icon: Star },
+  { to: '/organizacoes', label: t('nav.organizations'), icon: Building2 },
+  { to: '/configuracoes', label: t('nav.settings'), icon: Settings },
 ]
 
 interface SidebarProps {
@@ -19,6 +22,8 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const user = useAuthStore((s) => s.user)
+  const { t } = useTranslation()
+  const items = getItems(t)
 
   return (
     <>
@@ -36,7 +41,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             >
               <Headset className="size-5" />
             </span>
-            <span className="text-lg font-semibold text-white">Suporte CA3</span>
+            <span className="text-lg font-semibold text-white">{t('app.name')}</span>
           </div>
           <button onClick={onClose} className="text-slate-300 hover:text-white lg:hidden" aria-label="Fechar menu">
             <X className="size-5" />

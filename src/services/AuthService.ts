@@ -5,8 +5,8 @@ export const AuthService = {
   login: (email: string, password: string) =>
     api.post<AuthResponse>('/auth/login', { email, password }),
 
-  register: (name: string, email: string, password: string, role?: string) =>
-    api.post<AuthResponse>('/auth/register', { name, email, password, role }),
+  register: (name: string, email: string, password: string, organizationId: string, role?: string) =>
+    api.post<AuthResponse>('/auth/register', { name, email, password, organizationId, role }),
 
   me: () => api.get<User>('/auth/me'),
 }

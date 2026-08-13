@@ -1,15 +1,24 @@
 import { useEffect, useState } from 'react'
 import { UserPlus, Check, Power } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader, Card, Input, Button, Select, Switch, Modal, LoadingState, ErrorState, Badge } from '@/shared/components'
 import { SlaService, UserService } from '@/services/AdminService'
 import { roleLabels } from '@/utils/labels'
+import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher'
 import type { SlaPolicy, User, Role } from '@/types'
 
-const roles = Object.entries(roleLabels).map(([value, label]) => ({ value, label }))
+const getRoles = (t: (key: string) => string) => [
+  { value: 'ADMIN', label: 'ADMIN' },
+  { value: 'SUPERVISOR', label: 'SUPERVISOR' },
+  { value: 'AGENT', label: t('conversations.assignee') },
+  { value: 'CUSTOMER', label: t('contacts.title') },
+]
 
 const emptyNewUser = { name: '', email: '', password: '', role: 'AGENT' as Role }
 
 export function SettingsPage() {
+  const { t } = useTranslation()
+  const roles = getRoles(t)
   const [policies, setPolicies] = useState<SlaPolicy[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -116,11 +125,11 @@ export function SettingsPage() {
   return (
     <div>
       <PageHeader
-        title="Configurações"
-        subtitle="Políticas de SLA, usuários e administração do sistema"
+        title={t('settings.title')}
+        subtitle="Políticas de SLA, idioma e administração do sistema"
         actions={
           <Button onClick={() => setCreatingUser(true)}>
-            <UserPlus className="size-4" /> Novo usuário
+            <UserPlus className="size-4" /> {t('tickets.newTicket')}
           </Button>
         }
       />
@@ -131,6 +140,11 @@ export function SettingsPage() {
       {!loading && !error && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="flex flex-col gap-6">
+            <Card>
+              <h2 className="mb-4 font-semibold text-text-primary">{t('settings.language')}</h2>
+              <LanguageSwitcher />
+            </Card>
+
             <Card>
               <h2 className="mb-4 font-semibold text-text-primary">Políticas de SLA</h2>
               {policies.length === 0 && <p className="text-sm text-text-secondary">Nenhuma política cadastrada</p>}
